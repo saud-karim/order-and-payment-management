@@ -1,0 +1,397 @@
+{
+	"info": {
+		"_postman_id": "tocaan-order-payment-api",
+		"name": "Tocaan Order Payment API",
+		"description": "Extendable Order and Payment Management API (Laravel 12). Import with Tocaan_Local.postman_environment.json.\n\nDeclined/timeout gateway outcomes are validated in PHPUnit (server-issued operation references). The public API does not expose client-controlled simulation flags.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Authentication",
+			"item": [
+				{
+					"name": "Register",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"name\": \"Jane Doe\",\n  \"email\": \"jane@example.com\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\"\n}"
+						},
+						"url": "{{base_url}}/auth/register"
+					},
+					"response": [],
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  const json = pm.response.json();",
+									"  if (json.data && json.data.token) {",
+									"    pm.environment.set('jwt_token', json.data.token);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Login",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"email\": \"jane@example.com\",\n  \"password\": \"password123\"\n}"
+						},
+						"url": "{{base_url}}/auth/login"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"  const json = pm.response.json();",
+									"  if (json.data && json.data.token) {",
+									"    pm.environment.set('jwt_token', json.data.token);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "Me",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/auth/me"
+					}
+				},
+				{
+					"name": "Logout",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/auth/logout"
+					}
+				}
+			]
+		},
+		{
+			"name": "Orders",
+			"item": [
+				{
+					"name": "Create Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_name\": \"Acme Corp\",\n  \"customer_email\": \"billing@acme.test\",\n  \"items\": [\n    {\n      \"product_name\": \"Widget\",\n      \"quantity\": 2,\n      \"unit_price\": \"10.50\"\n    }\n  ]\n}"
+						},
+						"url": "{{base_url}}/orders"
+					},
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"  const json = pm.response.json();",
+									"  if (json.data && json.data.order) {",
+									"    pm.environment.set('order_id', json.data.order.id);",
+									"  }",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					]
+				},
+				{
+					"name": "List Orders",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/orders"
+					}
+				},
+				{
+					"name": "Filter Orders by Status",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/orders?status=confirmed&per_page=15"
+					}
+				},
+				{
+					"name": "Show Order",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/orders/{{order_id}}"
+					}
+				},
+				{
+					"name": "Update Order",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"customer_name\": \"Acme Corp Updated\"\n}"
+						},
+						"url": "{{base_url}}/orders/{{order_id}}"
+					}
+				},
+				{
+					"name": "Confirm Order",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"status\": \"confirmed\"\n}"},
+						"url": "{{base_url}}/orders/{{order_id}}"
+					}
+				},
+				{
+					"name": "Cancel Order",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"status\": \"cancelled\"\n}"},
+						"url": "{{base_url}}/orders/{{order_id}}"
+					}
+				},
+				{
+					"name": "Delete Order",
+					"request": {
+						"method": "DELETE",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/orders/{{order_id}}"
+					}
+				}
+			]
+		},
+		{
+			"name": "Payments",
+			"item": [
+				{
+					"name": "Process Credit Card Payment",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"if (!pm.environment.get('idempotency_key')) {",
+									"  pm.environment.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						},
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const json = pm.response.json();",
+									"if (json.data && json.data.payment) {",
+									"  pm.environment.set('payment_id', json.data.payment.id);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "Idempotency-Key", "value": "{{idempotency_key}}"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"payment_method\": \"credit_card\"\n}"},
+						"url": "{{base_url}}/orders/{{order_id}}/payments"
+					}
+				},
+				{
+					"name": "Process PayPal Payment",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": ["pm.environment.set('idempotency_key', pm.variables.replaceIn('{{$guid}}'));"],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "Idempotency-Key", "value": "{{idempotency_key}}"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"payment_method\": \"paypal\"\n}"},
+						"url": "{{base_url}}/orders/{{order_id}}/payments"
+					}
+				},
+				{
+					"name": "List All Payments",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/payments?per_page=15"
+					}
+				},
+				{
+					"name": "List Payments by Order",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/orders/{{order_id}}/payments"
+					}
+				},
+				{
+					"name": "Replay Same Idempotency Key",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "Idempotency-Key", "value": "{{idempotency_key}}"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"payment_method\": \"credit_card\"\n}"},
+						"url": "{{base_url}}/orders/{{order_id}}/payments",
+						"description": "Reuses the idempotency_key captured from a prior payment request. Expect HTTP 200 with the same payment result and no second gateway charge."
+					}
+				}
+			]
+		},
+		{
+			"name": "Error Scenarios",
+			"description": "Live requests for errors the API exposes. Declined/202/503 gateway outcomes are documented as saved examples (see folder descriptions) because simulation suffixes are server-controlled.",
+			"item": [
+				{
+					"name": "401 Missing Token",
+					"request": {"method": "GET", "url": "{{base_url}}/orders"}
+				},
+				{
+					"name": "404 Inaccessible Order",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/orders/999999"
+					}
+				},
+				{
+					"name": "409 Pay Unconfirmed Order",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "Idempotency-Key", "value": "{{$guid}}"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"payment_method\": \"credit_card\"\n}"},
+						"url": "{{base_url}}/orders/{{order_id}}/payments",
+						"description": "Run against a pending order (do not confirm first)."
+					}
+				},
+				{
+					"name": "409 Delete Order With Payments",
+					"request": {
+						"method": "DELETE",
+						"header": [{"key": "Authorization", "value": "Bearer {{jwt_token}}"}],
+						"url": "{{base_url}}/orders/{{order_id}}",
+						"description": "Run after a payment attempt exists on the order."
+					}
+				},
+				{
+					"name": "409 Duplicate Payment",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "Idempotency-Key", "value": "{{$guid}}"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"payment_method\": \"credit_card\"\n}"},
+						"url": "{{base_url}}/orders/{{order_id}}/payments",
+						"description": "Run after the order already has a successful payment, using a new Idempotency-Key."
+					}
+				},
+				{
+					"name": "409 Idempotency Fingerprint Mismatch",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"},
+							{"key": "Idempotency-Key", "value": "{{idempotency_key}}"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"payment_method\": \"paypal\"\n}"},
+						"url": "{{base_url}}/orders/{{order_id}}/payments",
+						"description": "Reuse idempotency_key from credit_card attempt but change payment_method."
+					}
+				},
+				{
+					"name": "422 Validation Error",
+					"request": {
+						"method": "POST",
+						"header": [
+							{"key": "Authorization", "value": "Bearer {{jwt_token}}"},
+							{"key": "Content-Type", "value": "application/json"}
+						],
+						"body": {"mode": "raw", "raw": "{\n  \"customer_name\": \"\",\n  \"customer_email\": \"not-an-email\",\n  \"items\": []\n}"},
+						"url": "{{base_url}}/orders"
+					}
+				},
+				{
+					"name": "Example — Declined Payment (200)",
+					"request": {"method": "GET", "url": "{{base_url}}/auth/me"},
+					"response": [
+						{
+							"name": "Saved example from automated tests",
+							"status": "OK",
+							"code": 200,
+							"header": [{"key": "Content-Type", "value": "application/json"}],
+							"body": "{\n  \"success\": true,\n  \"message\": \"Payment was declined by the gateway.\",\n  \"data\": {\n    \"payment\": {\n      \"id\": 1,\n      \"order_id\": 1,\n      \"status\": \"failed\",\n      \"payment_method\": \"credit_card\",\n      \"amount\": \"25.00\",\n      \"currency\": \"USD\",\n      \"external_payment_id\": null,\n      \"failure_reason\": \"The card was declined by the issuer.\"\n    }\n  }\n}"
+						}
+					],
+					"description": "Gateway decline is exercised in PHPUnit via server operation_reference suffixes. Not client-configurable."
+				},
+				{
+					"name": "Example — Pending Payment (202)",
+					"request": {"method": "GET", "url": "{{base_url}}/auth/me"},
+					"response": [
+						{
+							"name": "Saved example — gateway timeout",
+							"status": "Accepted",
+							"code": 202,
+							"body": "{\n  \"success\": true,\n  \"message\": \"Payment processing is incomplete because the gateway is temporarily unavailable. Retry with the same Idempotency-Key.\",\n  \"data\": {\n    \"payment\": {\n      \"status\": \"pending\"\n    }\n  }\n}"
+						}
+					]
+				}
+			]
+		}
+	]
+}
